@@ -116,3 +116,10 @@ cython_debug/
 # PyCharm
 .idea/
 .vscode/
+
+# Data files
+data/
+*.nc
+
+# Model weights
+*.pt
