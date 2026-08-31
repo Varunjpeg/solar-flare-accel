@@ -1,0 +1,38 @@
+============================================================
+1D-CNN EVALUATION — TEST SET
+============================================================
+Model: FlareCNN1D (float32)
+Parameters: 11,478
+Best val accuracy (used for saved model): 94.01%
+
+--- TEST SET ---
+Overall accuracy: 89.87%
+
+Per-class report:
+              precision    recall  f1-score   support
+
+  background       0.89      0.96      0.92      2686
+           A       0.00      0.00      0.00         0
+           B       0.63      1.00      0.78        31
+           C       0.95      0.82      0.88      2673
+           M       0.82      0.95      0.88       821
+           X       0.72      0.98      0.83        49
+
+    accuracy                           0.90      6260
+   macro avg       0.67      0.79      0.71      6260
+weighted avg       0.91      0.90      0.90      6260
+
+Confusion matrix (rows=true, cols=pred):
+  Classes: [np.str_('background'), np.str_('A'), np.str_('B'), np.str_('C'), np.str_('M'), np.str_('X')]
+[[2574    0    4   90   18    0]
+ [   0    0    0    0    0    0]
+ [   0    0   31    0    0    0]
+ [ 315    0   14 2190  151    3]
+ [   8    0    0   14  783   16]
+ [   0    0    0    0    1   48]]
+
+--- HARDWARE IMPACT SUMMARY ---
+Parameters (float32): 11,478  (44.8 KB)
+Parameters (INT8):    11,478  (11.2 KB)  [after quantization]
+Input:  60 samples x 2 channels -> 120 INT8 values per inference
+Output: 6-class probability vector -> argmax -> 3-bit flare class

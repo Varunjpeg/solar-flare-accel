@@ -1,0 +1,33 @@
+============================================================
+WINDOWING REPORT — goes_g16_avg1m_2022_2024
+============================================================
+Window size:   60 minutes
+Pre-peak:      30 min
+Post-peak:     30 min
+Log10 clip:    [-9.0, -3.0]
+
+Total flare events in catalog: 10,501
+Flare windows extracted:       10,006
+Background windows:            9,417
+Total windows:                 19,423
+
+--- TRAIN split (9856 windows) ---
+  background   (label=0):  5019  (50.9%)
+  B            (label=2):   848  (8.6%)
+  C            (label=3):  3591  (36.4%)
+  M            (label=4):   383  (3.9%)
+  X            (label=5):    15  (0.2%)
+
+--- VAL split (3307 windows) ---
+  background   (label=0):  1712  (51.8%)
+  B            (label=2):    35  (1.1%)
+  C            (label=3):  1404  (42.5%)
+  M            (label=4):   151  (4.6%)
+  X            (label=5):     5  (0.2%)
+
+--- TEST split (6260 windows) ---
+  background   (label=0):  2686  (42.9%)
+  B            (label=2):    31  (0.5%)
+  C            (label=3):  2673  (42.7%)
+  M            (label=4):   821  (13.1%)
+  X            (label=5):    49  (0.8%)
