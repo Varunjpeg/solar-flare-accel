@@ -434,9 +434,9 @@ Random splits allow data from near a flare event to bleed across splits (data le
 
 ## 👨‍💻 Author
 
-**Varun** — VLSI & Hardware ML  
-B.Tech ECE | ISRO Aditya-L1 Mission Context  
-📧 GitHub: [@Varunjpeg](https://github.com/Varunjpeg)
+**Varun U**  
+B.Tech Electronics Engineering (VLSI Design and Technology)  
+📧 [varunumashankar.u@gmail.com](mailto:varunumashankar.u@gmail.com) | GitHub: [@Varunjpeg](https://github.com/Varunjpeg)
 
 ---
 
