@@ -1,0 +1,43 @@
+============================================================
+LAYER QUANTIZATION PARAMETERS
+For use in RTL requantization datapath
+  Requantize: INT8_out = clip((INT32_acc >> shift) + zero, -128, 127)
+============================================================
+
+Layer: conv1
+  Weight shape:  (16, 2, 5)
+  Num weights:   160
+  Weight scale:  0.00923696
+  Weight zero:   0
+  Approx shift:  >> 7  (2^7 = 128)
+
+Layer: conv2
+  Weight shape:  (32, 16, 5)
+  Num weights:   2560
+  Weight scale:  0.01408139
+  Weight zero:   0
+  Approx shift:  >> 6  (2^6 = 64)
+
+Layer: conv3
+  Weight shape:  (64, 32, 3)
+  Num weights:   6144
+  Weight scale:  0.01159331
+  Weight zero:   0
+  Approx shift:  >> 6  (2^6 = 64)
+
+Layer: dense1
+  Weight shape:  (32, 64)
+  Num weights:   2048
+  Weight scale:  0.00393815
+  Weight zero:   0
+  Approx shift:  >> 8  (2^8 = 256)
+
+Layer: dense2
+  Weight shape:  (6, 32)
+  Num weights:   192
+  Weight scale:  0.00536096
+  Weight zero:   0
+  Approx shift:  >> 8  (2^8 = 256)
+
+Total weight ROM size: 11104 bytes  (10.84 KB)
+  (This is what $readmemh loads into on-chip BRAM)

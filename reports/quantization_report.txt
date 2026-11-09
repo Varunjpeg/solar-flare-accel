@@ -1,0 +1,44 @@
+============================================================
+QUANTIZATION REPORT (numpy INT8 golden reference)
+============================================================
+Float32 test accuracy:       91.88%
+Numpy INT8 test accuracy:    90.96%
+Accuracy drop:               0.93%  (ACCEPTABLE)
+
+--- Quantization scheme ---
+Weights:     symmetric INT8 per-tensor, scale = abs_max / 127
+Activations: symmetric INT8 per-tensor, calibrated on 200 val samples
+BatchNorm:   fused into Conv weights before quantization
+
+--- Weight memory ---
+Total INT8 weight bytes: 11104 (10.84 KB)
+Float32 equivalent:      44416 (43.38 KB)
+Compression ratio:       4x
+
+--- Hardware implications ---
+MAC operation:      INT8 x INT8 -> INT32 accumulate
+Requantization:     INT32 * (w_scale * act_scale / out_scale) -> clip -> INT8
+BN at inference:    NONE (fused into weights, zero hardware cost)
+ReLU:               max(0, x) = 1 comparator + 1 mux
+
+--- INT8 per-class report ---
+              precision    recall  f1-score   support
+
+  background       0.91      0.96      0.94      2686
+           A       0.00      0.00      0.00         0
+           B       0.56      1.00      0.72        31
+           C       0.92      0.89      0.91      2673
+           M       0.90      0.84      0.87       821
+           X       1.00      0.16      0.28        49
+
+    accuracy                           0.91      6260
+   macro avg       0.72      0.64      0.62      6260
+weighted avg       0.91      0.91      0.91      6260
+
+--- Confusion matrix ---
+[[2591    0    4   80   11    0]
+ [   0    0    0    0    0    0]
+ [   0    0   31    0    0    0]
+ [ 247    0   20 2377   29    0]
+ [  17    0    0  117  687    0]
+ [   1    0    0    0   40    8]]

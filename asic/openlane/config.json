@@ -1,0 +1,29 @@
+{
+  "DESIGN_NAME": "flare_classifier_top",
+
+  "VERILOG_FILES": [
+    "dir::../../rtl/mac_unit.v",
+    "dir::../../rtl/requant_unit.v",
+    "dir::../../rtl/weight_rom.v",
+    "dir::../../rtl/conv1d_layer.v",
+    "dir::../../rtl/maxpool_layer.v",
+    "dir::../../rtl/global_avg_pool.v",
+    "dir::../../rtl/dense_layer.v",
+    "dir::../../rtl/flare_classifier_top.v"
+  ],
+
+  "PDK": "sky130A",
+  "STD_CELL_LIBRARY": "sky130_fd_sc_hd",
+
+  "CLOCK_PORT": "clk",
+  "CLOCK_PERIOD": 20.0,
+
+  "FP_CORE_UTIL": 45,
+  "PL_TARGET_DENSITY": 0.50,
+
+  "FP_PDN_HPITCH": 153.6,
+  "FP_PDN_VPITCH": 153.18,
+
+  "SYNTH_STRATEGY": "DELAY 0",
+  "SYNTH_SIZING": true
+}
