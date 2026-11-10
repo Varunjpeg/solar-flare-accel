@@ -17,7 +17,11 @@
 | **ASIC Target Process** | SkyWater **130nm** open PDK (`sky130_fd_sc_hd`) |
 | **Target Clock** | **50 MHz** (edge-deployable, low-power) |
 | **EDA Flow** | **OpenLane v2** → OpenROAD → Magic/Netgen |
-| **DRC / LVS** | ✅ Clean (0 violations) |
+| **Standard Cell Instances** | **208,777** |
+| **Cell Area** | **1.088 mm²** |
+| **Total Power** | **6.04 mW** (internal 4.09 mW + switching 1.95 mW) |
+| **Setup Slack (TT, 25°C)** | **+90.69 ns** — timing-positive across all PVT corners |
+| **DRC / LVS** | ✅ **0 violations** (Magic + KLayout DRC; Netgen LVS) |
 | **Final GDSII** | ✅ Generated — [`final/gds/`](asic/openlane/runs/) |
 
 ---
@@ -34,15 +38,38 @@
    - [Phase 4: RTL Design (Verilog)](#phase-4-rtl-design-verilog)
    - [Phase 5: OpenLane ASIC Flow](#phase-5-openlane-asic-flow--gdsii)
 5. [ASIC Results](#-asic-physical-design-results)
-6. [Quick Start](#-quick-start)
-7. [Design Decisions](#-key-design-decisions)
-8. [References](#-references)
+6. [RTL Verification](#-rtl-verification)
+7. [Quick Start](#-quick-start)
+8. [Design Decisions](#-key-design-decisions)
+9. [References](#-references)
 
 ---
 
 ## 🎯 Project Overview
 
-Solar flares — sudden eruptions of electromagnetic radiation from the Sun — pose serious threats to spacecraft electronics, power grids, and satellite communications. Real-time, on-orbit detection allows spacecraft (like ISRO's Aditya-L1) to autonomously trigger protective safing sequences within seconds of a flare onset, before the radiation front arrives.
+Solar flares — sudden eruptions of electromagnetic radiation from the Sun — pose serious threats to spacecraft electronics, power grids, and satellite communications. Real-time, on-orbit detection allows spacecraft (like ISRO's Aditya-L1) to autonomously trigger protective safing sequences **within minutes of a flare onset** — far faster than the several-minute to tens-of-minute ground-loop latency of terrestrial alert systems where data must travel from orbit to Earth, be processed, and a command uplinked back.
+
+**This project designs a custom hardware accelerator chip for that exact task:**
+
+```
+Satellite X-ray Detector → ADC → [THIS CHIP] → Flare Class (B/C/M/X) in <1ms
+```
+
+The accelerator executes a **quantized 1D Convolutional Neural Network** (1D-CNN) on a 60-minute sliding window of soft X-ray flux data. It is designed for ultra-low power, low latency, and radiation-tolerant fabrication on a mature process (130nm).
+
+### Target Platforms
+
+This accelerator is primarily designed for **CubeSats and small satellites** operating in Low Earth Orbit (LEO) or Sun-Earth L1 halo orbits, where SWaP (Size, Weight, and Power) budgets are severely constrained:
+
+| Platform Class | Power Budget | Target Mission Examples |
+|---|---|---|
+| **3U–6U CubeSat** | 1–5 W total | ISRO NanoSat program, university research CubeSats |
+| **12U CubeSat / Microsat** | 5–10 W total | ISRO Microsat-1/2 class, PSLV-C37 payloads |
+| **L1 Halo Orbit Spacecraft** | Full SWaP with power margin | Aditya-L1 (ISRO, 2023–), instruments: SoLEXS (1.5–22 keV, Soft X-ray) and HEL1OS (8–150 keV, Hard X-ray) |
+
+> **Why CubeSats specifically?** Ground-loop latency for a 3U CubeSat can exceed 10–30 minutes per orbit pass. An on-board classifer eliminates this bottleneck entirely — the flare class is known in <1 ms of the detection window closing.
+
+
 
 **This project designs a custom hardware accelerator chip for that exact task:**
 
@@ -262,6 +289,8 @@ python scripts/08_generate_weight_rom.py # Emit .mem hex files for RTL
 ```
 
 **Quantization scheme:** Symmetric per-tensor PTQ (Post-Training Quantization)
+- **Weights** use **Q1.7 fixed-point format** (1 sign bit, 7 fractional bits → range [−1, +1) in 127 steps)
+- **Activations** use **Q7.0 fixed-point format** (8-bit signed integer, no fractional bits → INT8 range [−128, 127])
 
 ```
 W_int8 = round(W_float32 / (max|W| / 127)).clip(-127, 127)
@@ -305,6 +334,7 @@ All modules are synthesizable, standard-cell-mapped Verilog-2001.
 - **Synchronous BRAM inference** — `weight_rom.v` infers correctly to Sky130 SRAM or FPGA BRAM.
 - **1-cycle requantization** — `requant_unit.v` performs right-shift + bias + clip + ReLU in a single registered stage.
 - **GlobalAvgPool ÷15 approximation** — Uses `(acc × 4369 + 32768) >>> 16` (multiply-shift trick, no divider needed).
+- **18-bit accumulator headroom** — For Dense2 (6 outputs, 32 inputs): worst-case accumulation = 32 × 127² = 516,128 < 2²⁰, so a 20-bit signed accumulator safely contains all products without overflow before requantization.
 
 ---
 
@@ -348,14 +378,63 @@ python3 -m openlane config.json
 | **STA** | OpenSTA | ✅ Timing met at 50 MHz |
 | **GDSII** | KLayout/Magic | ✅ **Final layout exported** |
 
-**Power & Area Summary (Sky130 130nm):**
+**Power, Area & Timing Summary (Sky130 130nm, from `metrics.csv`):**
 
 | Metric | Value |
 |---|---|
-| Core Utilization | ~45% |
-| Clock Target | 50 MHz (20 ns period) |
-| PDK | SkyWater `sky130_fd_sc_hd` |
-| Supply Voltage | 1.8V |
+| **Standard cell instances** | 208,777 |
+| **Cell area** | 1.088 mm² |
+| **Core utilization** | ~45% |
+| **Clock target** | 50 MHz (20 ns period) |
+| **PDK** | SkyWater `sky130_fd_sc_hd` |
+| **Supply voltage** | 1.8 V |
+| **VDD worst voltage** | 1.79993 V |
+| **Max IR drop** | 65.4 µV |
+| **Total power** | **6.04 mW** |
+| **Internal power** | 4.09 mW |
+| **Switching power** | 1.95 mW |
+| **Leakage power** | 1.24 µW |
+| **Setup slack — TT, 25°C** | **+90.69 ns** ✅ |
+| **Hold slack — TT, 25°C** | **+0.615 ns** ✅ |
+| **Setup slack — SS, 100°C** | **+86.77 ns** ✅ |
+| **Setup slack — FF, −40°C** | **+92.0 ns** ✅ |
+| **Timing violations (all PVT)** | **0** |
+| **Magic DRC errors** | **0** |
+| **KLayout DRC errors** | **0** |
+| **Netgen LVS errors** | **0** |
+| **Lint errors** | 0 |
+| **Synthesis check errors** | 0 |
+
+---
+
+## 🧪 RTL Verification
+
+**Simulator:** Icarus Verilog (`iverilog` / `vvp`) + GTKWave for waveform inspection
+
+**Three test scenarios in `tb/tb_flare_classifier.v`:**
+
+| Scenario | Input Pattern | Expected Output | Purpose |
+|---|---|---|---|
+| **Quiet Sun** | Flat low flux | Background (class 0) | Baseline correctness |
+| **M-class step** | Rising flux, moderate peak | M-class (class 4) | Mid-range classification |
+| **X-class saturation** | High flux + sustained peak | X-class (class 5) | Critical safety path |
+
+**Key RTL checks performed:**
+- `s_ready` backpressure — upstream stalls correctly when pipeline is full
+- `m_valid` pulse timing — output asserts exactly once per 60-window inference
+- `acc_out` monotonically increases during `CALC` state (no spurious resets)
+- All `out_int8` outputs bounded in [−128, 127] after `requant_unit` clip
+- **VCD waveform dump** — `dump.vcd` generated for GTKWave post-simulation inspection
+
+```bash
+# Simulate + inspect waveform
+cd rtl
+iverilog -g2012 -o sim.out mac_unit.v requant_unit.v weight_rom.v \
+  conv1d_layer.v maxpool_layer.v global_avg_pool.v dense_layer.v \
+  flare_classifier_top.v tb/tb_flare_classifier.v
+vvp sim.out                # runs testbench, writes dump.vcd
+gtkwave dump.vcd           # open waveform viewer
+```
 
 ---
 
@@ -389,7 +468,8 @@ iverilog -g2012 -o sim.out \
   conv1d_layer.v maxpool_layer.v global_avg_pool.v dense_layer.v \
   flare_classifier_top.v \
   tb/tb_flare_classifier.v
-vvp sim.out
+vvp sim.out        # Outputs pass/fail; writes dump.vcd for GTKWave
+gtkwave dump.vcd   # Inspect waveforms
 ```
 
 ### 4. OpenLane ASIC Synthesis (Linux/WSL2 required)
@@ -423,12 +503,14 @@ Random splits allow data from near a flare event to bleed across splits (data le
 
 | Reference | Relevance |
 |---|---|
-| NOAA SWPC GOES X-ray flux | Primary training data source |
-| Aditya-L1 HEL1OS paper (arXiv:2512.12679) | Target mission context |
-| Aditya-L1 SoLEXS calibration (arXiv:2509.26292) | Secondary validation dataset |
+| NOAA SWPC GOES X-ray flux | Primary training data source (2022–2024) |
+| Aditya-L1 HEL1OS instrument (arXiv:2512.12679) | Target mission: Hard X-ray spectrometer (8–150 keV) |
+| Aditya-L1 SoLEXS calibration (arXiv:2509.26292) | Target mission: Soft X-ray spectrometer (1.5–22 keV) |
+| SUIT/Aditya-L1 ground pipeline (arXiv:2501.02274) | Ground data processing chain context |
+| Jacob et al., CVPR 2018 | INT8 quantization methodology (symmetric PTQ) |
 | OpenLane v2 documentation | ASIC implementation flow |
-| SkyWater 130nm PDK | Target fabrication process |
-| PyTorch Quantization Guide | INT8 PTQ methodology |
+| SkyWater 130nm PDK (`sky130_fd_sc_hd`) | Target fabrication process |
+| PyTorch Quantization Guide | FP32 → INT8 scale/shift computation |
 
 ---
 
